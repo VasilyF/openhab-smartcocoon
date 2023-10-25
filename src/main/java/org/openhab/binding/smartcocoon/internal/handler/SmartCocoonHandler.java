@@ -10,9 +10,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.smartcocoon.internal;
+package org.openhab.binding.SmartCocoon.internal;
 
-import static org.openhab.binding.smartcocoon.internal.smartcocoonBindingConstants.*;
+import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -36,22 +36,22 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.smartcocoon.internal.api.SmartcocoonAPI;
-//import org.openhab.binding.smartcocoon.internal.SmartcocoonException;
+//import org.openhab.binding.smartcocoon.internal.SmartCocoonException;
 import org.openhab.core.library.types.OnOffType;
 
 
 /**
- * The {@link smartcocoonHandler} is responsible for handling commands, which are
+ * The {@link SmartCocoonHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Mike Fedotov - Initial contribution
  */
 @NonNullByDefault
-public class smartcocoonHandler extends BaseThingHandler {
+public class SmartCocoonHandler extends BaseThingHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(smartcocoonHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(SmartCocoonHandler.class);
 
-    //private @Nullable smartcocoonConfiguration config;
+    //private @Nullable SmartCocoonConfiguration config;
     private @Nullable SmartcocoonAPI api;
     private @Nullable ScheduledFuture<?> pollingJob;
     //private final SmartcocoonAPI api;
@@ -73,7 +73,7 @@ public class smartcocoonHandler extends BaseThingHandler {
         @Nullable FanInfoResult @Nullable [] fans;
     }
 
-    public smartcocoonHandler(Thing thing, HttpClient httpClient, Gson gson) {
+    public SmartCocoonHandler(Thing thing, HttpClient httpClient, Gson gson) {
         super(thing);
         this.httpClient = httpClient;
     }
@@ -141,7 +141,7 @@ public class smartcocoonHandler extends BaseThingHandler {
 
     @Override
     public void initialize() {
-        smartcocoonConfiguration config = getConfigAs(smartcocoonConfiguration.class);
+        SmartCocoonConfiguration config = getConfigAs(SmartCocoonConfiguration.class);
         refreshInterval = config.refreshInterval;
         String fanIdExt = config.fanIdExt;
 

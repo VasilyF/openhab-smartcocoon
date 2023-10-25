@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.smartcocoon.internal.api;
 
-//import static org.openhab.binding.smartcocoon.internal.smartcocoonBindingConstants.*;
+//import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -43,7 +43,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import org.openhab.binding.smartcocoon.internal.SmartcocoonException;
-import org.openhab.binding.smartcocoon.internal.smartcocoonConfiguration;
+import org.openhab.binding.smartcocoon.internal.SmartCocoonConfiguration;
 
 
 /**
@@ -72,7 +72,7 @@ public class SmartcocoonAPI {
     private @Nullable String client = null;
     private int tokenExpiry = 0;
 
-    public SmartcocoonAPI(smartcocoonConfiguration configuration, HttpClient httpClient, Gson gson) {
+    public SmartcocoonAPI(SmartCocoonConfiguration configuration, HttpClient httpClient, Gson gson) {
         this.gson = gson;
 	this.username = configuration.username;
 	this.password = configuration.password;

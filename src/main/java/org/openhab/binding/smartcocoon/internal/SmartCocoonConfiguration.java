@@ -15,18 +15,15 @@ package org.openhab.binding.smartcocoon.internal;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The {@link smartcocoonConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link SmartCocoonConfiguration} class contains fields mapping thing configuration parameters.
  *
  * @author Mike Fedotov - Initial contribution
  */
 @NonNullByDefault
-public class smartcocoonConfiguration {
+public class SmartCocoonConfiguration {
 
     /**
      * Sample configuration parameters. Replace with your own.
      */
-    public String username = "";
-    public String password = "";
-    public int refreshInterval = 15;
     public String fanIdExt = "";
 }

@@ -16,13 +16,13 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
- * The {@link smartcocoonBindingConstants} class defines common constants, which are
+ * The {@link SmartCocoonBindingConstants} class defines common constants, which are
  * used across the whole binding.
  *
  * @author Mike Fedotov - Initial contribution
  */
 @NonNullByDefault
-public class smartcocoonBindingConstants {
+public class SmartCocoonBindingConstants {
 
     private static final String BINDING_ID = "smartcocoon";
 

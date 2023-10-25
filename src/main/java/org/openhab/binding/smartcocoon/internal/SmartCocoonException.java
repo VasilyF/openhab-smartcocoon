@@ -16,20 +16,20 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 
 /**
- * {@link ElectroluxAirException} is used when there is exception communicating with Electrolux Delta API.
+ * {@link SmartCocoonException} is used when there is exception communicating with Electrolux Delta API.
  *
  * @author Jan Gustafsson - Initial contribution
  */
 @NonNullByDefault
-public class SmartcocoonException extends Exception {
+public class SmartCocoonException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
-    public SmartcocoonException(Exception source) {
+    public SmartCocoonException(Exception source) {
         super(source);
     }
 
-    public SmartcocoonException(String message) {
+    public SmartCocoonException(String message) {
         super(message);
     }
 

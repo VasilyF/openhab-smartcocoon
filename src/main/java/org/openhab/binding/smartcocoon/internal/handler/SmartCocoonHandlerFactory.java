@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.smartcocoon.internal;
 
-import static org.openhab.binding.smartcocoon.internal.smartcocoonBindingConstants.*;
+import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
 import java.util.Set;
 import java.util.Collections;
@@ -34,14 +34,14 @@ import com.google.gson.Gson;
 import org.eclipse.jetty.client.HttpClient;
 
 /**
- * The {@link smartcocoonHandlerFactory} is responsible for creating things and thing
+ * The {@link SmartCocoonHandlerFactory} is responsible for creating things and thing
  * handlers.
  *
  * @author Mike Fedotov - Initial contribution
  */
 @NonNullByDefault
 @Component(configurationPid = "binding.smartcocoon", service = ThingHandlerFactory.class)
-public class smartcocoonHandlerFactory extends BaseThingHandlerFactory {
+public class SmartCocoonHandlerFactory extends BaseThingHandlerFactory {
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_FAN);
     //private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_SAMPLE);
@@ -50,7 +50,7 @@ public class smartcocoonHandlerFactory extends BaseThingHandlerFactory {
     private final HttpClient httpClient;
 
     @Activate
-    public smartcocoonHandlerFactory(@Reference HttpClientFactory httpClientFactory) {
+    public SmartCocoonHandlerFactory(@Reference HttpClientFactory httpClientFactory) {
         this.httpClient = httpClientFactory.getCommonHttpClient();
         this.gson = new Gson();
     }
@@ -66,7 +66,7 @@ public class smartcocoonHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_FAN.equals(thingTypeUID)) {
-            return new smartcocoonHandler(thing, httpClient, gson);
+            return new SmartCocoonHandler(thing, httpClient, gson);
         }
 
         return null;
