@@ -24,10 +24,10 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
-import org.openhab.binding.smartcocoon.internal.ElectroluxAirBridgeConfiguration;
-import org.openhab.binding.smartcocoon.internal.api.SmartcocoonAPI;
-import org.openhab.binding.smartcocoon.internal.discovery.ElectroluxAirDiscoveryService;
-import org.openhab.binding.smartcocoon.internal.dto.ElectroluxPureA9DTO;
+import org.openhab.binding.smartcocoon.internal.SmartCocoonBridgeConfiguration;
+import org.openhab.binding.smartcocoon.internal.api.SmartCocoonAPI;
+// import org.openhab.binding.smartcocoon.internal.discovery.SmartCocoonDiscoveryService;
+import org.openhab.binding.smartcocoon.internal.dto.FanInfoResultDTO; // TODO - SmartCocoonFansInfo
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingStatus;
@@ -41,7 +41,7 @@ import org.openhab.core.types.RefreshType;
 import com.google.gson.Gson;
 
 /**
- * The {@link ElectroluxAirBridgeHandler} is responsible for handling commands, which are
+ * The {@link SmartCocoonBridgeHandler} is responsible for handling commands, which are
  * sent to one of the channels.
  *
  * @author Jan Gustafsson - Initial contribution
@@ -49,18 +49,19 @@ import com.google.gson.Gson;
 @NonNullByDefault
 public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
 
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_BRIDGE);
 
-    private int refreshTimeInSeconds = 300;
+    // public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_BRIDGE);
+
+    private int refreshInterval = 300;
 
     private final Gson gson;
     private final HttpClient httpClient;
-    private final Map<String, ElectroluxPureA9DTO> electroluxAirThings = new ConcurrentHashMap<>();
+    private final Map<String, FanInfoResultDTO> smartCocoonThings = new ConcurrentHashMap<>();
 
     private @Nullable SmartCocoonAPI api;
     private @Nullable ScheduledFuture<?> refreshJob;
 
-    public ElectroluxAirBridgeHandler(Bridge bridge, HttpClient httpClient, Gson gson) {
+    public SmartCocoonBridgeHandler(Bridge bridge, HttpClient httpClient, Gson gson) {
         super(bridge);
         this.httpClient = httpClient;
         this.gson = gson;
@@ -68,62 +69,64 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
 
     @Override
     public void initialize() {
-        ElectroluxAirBridgeConfiguration config = getConfigAs(ElectroluxAirBridgeConfiguration.class);
+        SmartCocoonBridgeConfiguration config = getConfigAs(SmartCocoonBridgeConfiguration.class);
+        this.refreshInterval = config.refreshInterval;
 
-        ElectroluxDeltaAPI electroluxDeltaAPI = new ElectroluxDeltaAPI(config, gson, httpClient);
-        refreshTimeInSeconds = config.refresh;
-
+	// TODO - annotated NonNullByDefault
         if (config.username == null || config.password == null) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                     "Configuration of username, password is mandatory");
-        } else if (refreshTimeInSeconds < 0) {
+        } else if (this.refreshTimeInteval < 0) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                     "Refresh time cannot be negative!");
         } else {
             try {
-                this.api = electroluxDeltaAPI;
+                this.api = new SmartCocoonAPI(config, gson, httpClient);
                 scheduler.execute(() -> {
-                    updateStatus(ThingStatus.UNKNOWN);
-                    startAutomaticRefresh();
-
+                    this.updateStatus(ThingStatus.UNKNOWN);
+                    this.startAutomaticRefresh();
                 });
             } catch (RuntimeException e) {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
+                this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, e.getMessage());
             }
         }
     }
 
-    public Map<String, ElectroluxPureA9DTO> getElectroluxAirThings() {
-        return electroluxAirThings;
+    public Map<String, FanInfoResultDTO> getSmartCocoonThings() {
+        return this.smartCocoonThings;
     }
 
+    /*
     @Override
+    // TODO - create SmartCocoonDiscoveryService
     public Collection<Class<? extends ThingHandlerService>> getServices() {
-        return Set.of(ElectroluxAirDiscoveryService.class);
+        return Set.of(SmartCocoonDiscoveryService.class);
     }
+    */
 
     @Override
     public void dispose() {
-        stopAutomaticRefresh();
+        this.stopAutomaticRefresh();
     }
 
-    public @Nullable ElectroluxDeltaAPI getElectroluxDeltaAPI() {
-        return api;
+    public @Nullable SmartCocoonAPI getSmartCocoonAPI() {
+        return this.api;
     }
 
+    // TODO - make explicit Runnable
     private boolean refreshAndUpdateStatus() {
         if (api != null) {
-            if (api.refresh(electroluxAirThings)) {
-                getThing().getThings().stream().forEach(thing -> {
-                    ElectroluxAirHandler handler = (ElectroluxAirHandler) thing.getHandler();
+            if (api.refresh(this.smartCocoonThings)) {
+                this.getBridge().getThings().stream().forEach(thing -> {
+                    SmartCocoonHandler handler = (SmartCocoonHandler) thing.getHandler();
                     if (handler != null) {
                         handler.update();
                     }
                 });
-                updateStatus(ThingStatus.ONLINE);
+                this.updateStatus(ThingStatus.ONLINE);
                 return true;
             } else {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+                this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
             }
         }
         return false;
@@ -132,7 +135,7 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
     private void startAutomaticRefresh() {
         ScheduledFuture<?> refreshJob = this.refreshJob;
         if (refreshJob == null || refreshJob.isCancelled()) {
-            this.refreshJob = scheduler.scheduleWithFixedDelay(this::refreshAndUpdateStatus, 0, refreshTimeInSeconds,
+            refreshJob = scheduler.scheduleWithFixedDelay(this::refreshAndUpdateStatus, 0, refreshTimeInterval,
                     TimeUnit.SECONDS);
         }
     }
@@ -148,7 +151,7 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (CHANNEL_STATUS.equals(channelUID.getId()) && command instanceof RefreshType) {
-            scheduler.schedule(this::refreshAndUpdateStatus, 1, TimeUnit.SECONDS);
+            scheduler.schedule(this::refreshAndUpdateStatus, 0, TimeUnit.SECONDS); // TODO - wait 1 sec?
         }
     }
 }

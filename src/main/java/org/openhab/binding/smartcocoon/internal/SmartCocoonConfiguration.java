@@ -25,5 +25,5 @@ public class SmartCocoonConfiguration {
     /**
      * Sample configuration parameters. Replace with your own.
      */
-    public String fanIdExt = "";
+    public String deviceId = "";
 }

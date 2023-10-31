@@ -26,6 +26,8 @@ import org.eclipse.jdt.annotation.Nullable;
 //import org.openhab.core.thing.binding.BaseThingHandler;
 //import org.openhab.core.types.Command;
 //import org.openhab.core.types.RefreshType;
+import org.openhab.binding.electroluxair.internal.dto.FanInfoResultDTO;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,17 +44,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-import org.openhab.binding.smartcocoon.internal.SmartcocoonException;
+import org.openhab.binding.smartcocoon.internal.SmartCocoonException;
 import org.openhab.binding.smartcocoon.internal.SmartCocoonConfiguration;
 
 
 /**
- * The {@link SmartcocoonAPI} handles the REST API calls
+ * The {@link SmartCocoonAPI} handles the REST API calls
  *
  * @author Mike Fedotov - Initial contribution
  */
 @NonNullByDefault
-public class SmartcocoonAPI {
+public class SmartCocoonAPI {
     private static final String BASE_URL = "https://app.mysmartcocoon.com/api";
     private static final String USER_AGENT = "SmartCocoon/1 CFNetwork/1312 Darwin/21.0.0";
 
@@ -62,7 +64,7 @@ public class SmartcocoonAPI {
     private static final String JSON_CONTENT_TYPE = "application/json";
     //private static final int MAX_RETRIES = 3;
 
-    private final Logger logger = LoggerFactory.getLogger(SmartcocoonAPI.class);
+    private final Logger logger = LoggerFactory.getLogger(SmartCocoonAPI.class);
     private final Gson gson;
     private final HttpClient httpClient;
     private final String username;
@@ -72,16 +74,39 @@ public class SmartcocoonAPI {
     private @Nullable String client = null;
     private int tokenExpiry = 0;
 
-    public SmartcocoonAPI(SmartCocoonConfiguration configuration, HttpClient httpClient, Gson gson) {
+    public SmartCocoonAPI(SmartCocoonConfiguration configuration, HttpClient httpClient, Gson gson) {
         this.gson = gson;
 	this.username = configuration.username;
 	this.password = configuration.password;
         this.httpClient = httpClient;
     }
 
-   public String getFanInfo(String fanId) throws SmartcocoonException {
+    public boolean refresh(Map<String, FanInfoResultDTO> smartCocoonThings) {
+        try {
+            if (Instant.now().isAfter(this.tokenExpiry)) {
+                // Login again since token is expired
+                this.login();
+            }
+            // Get all appliances
+            String json = this.getFans();
+            FanInfoResultDTO[] dtos = gson.fromJson(json, FanInfoResultDTO[].class);
+            if (dtos != null) {
+                for (FanInfoResultDTO dto : dtos) {
+                    String deviceId = dto.fan_id;
+		    smartCocoonThings.put(deviceId, dto);
+                }
+                return true;
+            }
+        } catch (JsonSyntaxException | SmartCocoonException e) {
+            logger.warn("Failed to refresh! {}", e.getMessage());
+        }
+        return false;
+    }
+
+
+   public String getFanInfo(String fanId) throws SmartCocoonException {
         if (fanId == null || fanId.isEmpty()) {
-              throw new SmartcocoonException ("Internal error: getFanInfo invalid parameter");
+              throw new SmartCocoonException ("Internal error: getFanInfo invalid parameter");
         }
         try {
 
@@ -90,7 +115,7 @@ public class SmartcocoonAPI {
             }
 
             if (client == null || accessToken == null || uid == null) {
-              throw new SmartcocoonException ("Internal error: Expected authentication information not availabl");
+              throw new SmartCocoonException ("Internal error: Expected authentication information not availabl");
             }
 
             Request request = createRequest(FANS_URL + "/" + fanId, HttpMethod.GET);
@@ -101,17 +126,17 @@ public class SmartcocoonAPI {
             logger.debug("HTTP GET Request {}.", request.toString());
             ContentResponse httpResponse = request.send();
             if (httpResponse.getStatus() != HttpStatus.OK_200) {
-                throw new SmartcocoonException("Failed to get status for fan " + fanId + ", status: " + httpResponse.getStatus() + ", response: " + httpResponse.getContentAsString());
+                throw new SmartCocoonException("Failed to get status for fan " + fanId + ", status: " + httpResponse.getStatus() + ", response: " + httpResponse.getContentAsString());
             }
             return httpResponse.getContentAsString();
 
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            throw new SmartcocoonException(e);
+            throw new SmartCocoonException(e);
         }
         
    }
 
-   public String getFans() throws SmartcocoonException {
+   public String getFans() throws SmartCocoonException {
         try {
 
             if (client == null || accessToken == null || uid == null) {
@@ -119,7 +144,7 @@ public class SmartcocoonAPI {
             }
 
             if (client == null || accessToken == null || uid == null) {
-              throw new SmartcocoonException ("Internal error: Expected authentication information not availabl");
+              throw new SmartCocoonException ("Internal error: Expected authentication information not availabl");
             }
 
             Request request = createRequest(FANS_URL, HttpMethod.GET);
@@ -130,12 +155,12 @@ public class SmartcocoonAPI {
             logger.debug("HTTP GET Request {}.", request.toString());
             ContentResponse httpResponse = request.send();
             if (httpResponse.getStatus() != HttpStatus.OK_200) {
-                throw new SmartcocoonException("Failed to get fans, status: " + httpResponse.getStatus() + ", response: " + httpResponse.getContentAsString());
+                throw new SmartCocoonException("Failed to get fans, status: " + httpResponse.getStatus() + ", response: " + httpResponse.getContentAsString());
             }
             return httpResponse.getContentAsString();
 
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            throw new SmartcocoonException(e);
+            throw new SmartCocoonException(e);
         }
         
    }
@@ -152,7 +177,7 @@ public class SmartcocoonAPI {
         return request;
     }
 
-    private void login() throws SmartcocoonException {
+    private void login() throws SmartCocoonException {
         try {
             client = null;
             accessToken = null;
@@ -170,7 +195,7 @@ public class SmartcocoonAPI {
 
             ContentResponse httpResponse = request.send();
             if (httpResponse.getStatus() != HttpStatus.OK_200) {
-                throw new SmartcocoonException("Failed to authenticate: " + httpResponse.getContentAsString());
+                throw new SmartCocoonException("Failed to authenticate: " + httpResponse.getContentAsString());
             }
             // All required auth data comes in headers:
             // client, access-token, expiry, uid
@@ -180,7 +205,7 @@ public class SmartcocoonAPI {
 
             // Those three headers are expected to be present in the response, cannot proceed if missing
             if (client == null || accessToken == null || uid == null) {
-              throw new SmartcocoonException ("Expected headers not present in auth response");
+              throw new SmartCocoonException ("Expected headers not present in auth response");
             }
 
             // We generally can do with the missing/invalid expiry header
@@ -190,22 +215,22 @@ public class SmartcocoonAPI {
             } catch (Exception ignore) {}
 
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            throw new SmartcocoonException(e);
+            throw new SmartCocoonException(e);
         }
     }
 
-   private void tryLogin()  throws SmartcocoonException {
+   private void tryLogin()  throws SmartCocoonException {
       // Plan to implement checks to avoid excessive login attempts...
       login();
    }
 
 
-  public void setFanMode (String fanId, String mode) throws SmartcocoonException {
+  public void setFanMode (String fanId, String mode) throws SmartCocoonException {
         if (fanId == null || fanId.isEmpty()) {
-              throw new SmartcocoonException ("Internal error: getFanInfo invalid parameter");
+              throw new SmartCocoonException ("Internal error: getFanInfo invalid parameter");
         }
         if ( mode == null || ( !(mode.equals("always_on") || mode.equals("always_off")) ) ) {
-              throw new SmartcocoonException ("Internal error: setFanMode invalid parameter");
+              throw new SmartCocoonException ("Internal error: setFanMode invalid parameter");
         }
 
         try {
@@ -215,7 +240,7 @@ public class SmartcocoonAPI {
             }
 
             if (client == null || accessToken == null || uid == null) {
-              throw new SmartcocoonException ("Internal error: Expected authentication information not availabl");
+              throw new SmartCocoonException ("Internal error: Expected authentication information not availabl");
             }
 
             Request request = createRequest(FANS_URL + "/" + fanId, HttpMethod.PUT);
@@ -229,7 +254,7 @@ public class SmartcocoonAPI {
             logger.debug("HTTP PUT Request {}.", request.toString());
             ContentResponse httpResponse = request.send();
             if (httpResponse.getStatus() != HttpStatus.OK_200) {
-                throw new SmartcocoonException("Failed to set mode " + mode + " for fan " + fanId + 
+                throw new SmartCocoonException("Failed to set mode " + mode + " for fan " + fanId + 
                             ", status: " + httpResponse.getStatus() + ", response: " + httpResponse.getContentAsString());
             }
 
@@ -237,16 +262,16 @@ public class SmartcocoonAPI {
             //return;
 
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            throw new SmartcocoonException(e);
+            throw new SmartCocoonException(e);
         }
   }
 
-  public void setFanSpeed(String fanId, int speed) throws SmartcocoonException {
+  public void setFanSpeed(String fanId, int speed) throws SmartCocoonException {
         if (fanId == null || fanId.isEmpty()) {
-              throw new SmartcocoonException ("Internal error: getFanInfo invalid parameter");
+              throw new SmartCocoonException ("Internal error: getFanInfo invalid parameter");
         }
         if ( speed < 0 || speed > 100) {
-              throw new SmartcocoonException ("Internal error: setFanSpeed invalid speed");
+              throw new SmartCocoonException ("Internal error: setFanSpeed invalid speed");
         }
 
         try {
@@ -256,7 +281,7 @@ public class SmartcocoonAPI {
             }
 
             if (client == null || accessToken == null || uid == null) {
-              throw new SmartcocoonException ("Internal error: Expected authentication information not availabl");
+              throw new SmartCocoonException ("Internal error: Expected authentication information not availabl");
             }
 
             Request request = createRequest(FANS_URL + "/" + fanId, HttpMethod.PUT);
@@ -270,7 +295,7 @@ public class SmartcocoonAPI {
             logger.debug("HTTP PUT Request {}.", request.toString());
             ContentResponse httpResponse = request.send();
             if (httpResponse.getStatus() != HttpStatus.OK_200) {
-                throw new SmartcocoonException("Failed to set speed " + speed + " for fan " + fanId + 
+                throw new SmartCocoonException("Failed to set speed " + speed + " for fan " + fanId + 
                             ", status: " + httpResponse.getStatus() + ", response: " + httpResponse.getContentAsString());
             }
 
@@ -278,7 +303,7 @@ public class SmartcocoonAPI {
             //return;
 
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            throw new SmartcocoonException(e);
+            throw new SmartCocoonException(e);
         }
   }
 

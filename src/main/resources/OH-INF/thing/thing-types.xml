@@ -4,21 +4,9 @@
 	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
-	<!-- Sample Thing Type -->
-	<thing-type id="fan">
-		<!-- Comment this in for Things which need a Bridge to function.
-			<supported-bridge-type-refs>
-			<bridge-type-ref id="smartcocoonBridge" />
-			</supported-bridge-type-refs>
-		-->
-
-		<label>smartcocoon Binding Thing</label>
-		<description>Sample thing for smartcocoon Binding</description>
-
-		<channels>
-			<channel id="power" typeId="power"/>
-			<channel id="fanSpeed" typeId="fanSpeed"/>
-		</channels>
+	<bridge-type id="smartcocoonBridge">
+		<label>SmartCocoon account</label>
+		<description>Bridge representing your SmartCocoon account</description>
 
 		<config-description>
 			<parameter name="username" type="text" required="true">
@@ -37,7 +25,25 @@
 				<default>60</default>
 				<advanced>true</advanced>
 			</parameter>
-			<parameter name="fanIdExt" type="text" required="true">
+		</config-description>
+	</bridge-type>
+
+	<!-- Sample Thing Type -->
+	<thing-type id="fan">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="smartcocoonBridge" />
+		</supported-bridge-type-refs>
+
+		<label>SmartCocoon smart vent fan</label>
+		<description>Thing representing SmartCocoon vent fan</description>
+
+		<channels>
+			<channel id="power" typeId="power"/>
+			<channel id="fanSpeed" typeId="fanSpeed"/>
+		</channels>
+
+		<config-description>
+			<parameter name="deviceId" type="text" required="true">
 				<label>Fan Id</label>
 				<description>Fan Id as shown on front of physical device</description>
 			</parameter>
