@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.smartcocoon.internal;
+package org.openhab.binding.smartcocoon.internal.handler;
 
 import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
@@ -58,7 +58,7 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
     private final HttpClient httpClient;
     private final Map<String, FanInfoResultDTO> smartCocoonThings = new ConcurrentHashMap<>();
 
-    private @Nullable SmartCocoonAPI api;
+    @Nullable SmartCocoonAPI api;
     private @Nullable ScheduledFuture<?> refreshJob;
 
     public SmartCocoonBridgeHandler(Bridge bridge, HttpClient httpClient, Gson gson) {
@@ -76,12 +76,12 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
         if (config.username == null || config.password == null) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                     "Configuration of username, password is mandatory");
-        } else if (this.refreshTimeInteval < 0) {
+        } else if (this.refreshInterval < 0) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                     "Refresh time cannot be negative!");
         } else {
             try {
-                this.api = new SmartCocoonAPI(config, gson, httpClient);
+                this.api = new SmartCocoonAPI(config, httpClient, gson);
                 scheduler.execute(() -> {
                     this.updateStatus(ThingStatus.UNKNOWN);
                     this.startAutomaticRefresh();
@@ -135,7 +135,7 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
     private void startAutomaticRefresh() {
         ScheduledFuture<?> refreshJob = this.refreshJob;
         if (refreshJob == null || refreshJob.isCancelled()) {
-            refreshJob = scheduler.scheduleWithFixedDelay(this::refreshAndUpdateStatus, 0, refreshTimeInterval,
+            refreshJob = scheduler.scheduleWithFixedDelay(this::refreshAndUpdateStatus, 0, this.refreshInterval,
                     TimeUnit.SECONDS);
         }
     }
@@ -150,7 +150,7 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        if (CHANNEL_STATUS.equals(channelUID.getId()) && command instanceof RefreshType) {
+        if (command instanceof RefreshType) {
             scheduler.schedule(this::refreshAndUpdateStatus, 0, TimeUnit.SECONDS); // TODO - wait 1 sec?
         }
     }

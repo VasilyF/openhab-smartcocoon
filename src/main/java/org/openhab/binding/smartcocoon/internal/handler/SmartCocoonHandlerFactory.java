@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.smartcocoon.internal;
+package org.openhab.binding.smartcocoon.internal.handler;
 
 import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
@@ -19,6 +19,7 @@ import java.util.Collections;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
@@ -43,8 +44,8 @@ import org.eclipse.jetty.client.HttpClient;
 @Component(configurationPid = "binding.smartcocoon", service = ThingHandlerFactory.class)
 public class SmartCocoonHandlerFactory extends BaseThingHandlerFactory {
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Collections.singleton(THING_TYPE_FAN);
-    //private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_SAMPLE);
+    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_FAN,
+            THING_TYPE_BRIDGE);
 
     private final Gson gson;
     private final HttpClient httpClient;
@@ -67,8 +68,11 @@ public class SmartCocoonHandlerFactory extends BaseThingHandlerFactory {
 
         if (THING_TYPE_FAN.equals(thingTypeUID)) {
             return new SmartCocoonHandler(thing, httpClient, gson);
+        } 
+	else if (THING_TYPE_BRIDGE.equals(thingTypeUID)) {
+            return new SmartCocoonBridgeHandler((Bridge) thing, httpClient, gson);
         }
-
         return null;
+
     }
 }

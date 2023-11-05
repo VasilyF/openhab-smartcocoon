@@ -28,6 +28,8 @@ public class SmartCocoonBindingConstants {
 
     // List of all Thing Type UIDs
     public static final ThingTypeUID THING_TYPE_FAN = new ThingTypeUID(BINDING_ID, "fan");
+    public static final ThingTypeUID THING_TYPE_BRIDGE = new ThingTypeUID(BINDING_ID, "account");
+
 
     // List of all Channel ids
     public static final String CHANNEL_FAN_SWITCH = "power";

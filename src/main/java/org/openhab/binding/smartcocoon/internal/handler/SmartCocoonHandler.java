@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.SmartCocoon.internal;
+package org.openhab.binding.smartcocoon.internal.handler;
 
 import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
@@ -22,25 +22,30 @@ import javax.measure.quantity.Dimensionless;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.electroluxair.internal.SmartCocoonConfiguration;
-import org.openhab.binding.electroluxair.internal.dto.FanInfoResultDTO;
 
+import org.openhab.binding.smartcocoon.internal.SmartCocoonConfiguration;
+import org.openhab.binding.smartcocoon.internal.dto.FanInfoResultDTO;
+import org.openhab.binding.smartcocoon.internal.api.SmartCocoonAPI;
+import org.openhab.binding.smartcocoon.internal.SmartCocoonException;
+
+import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
-//import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.ThingStatusDetail;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.binding.BaseThingHandler;
+import org.openhab.core.thing.binding.BridgeHandler;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
+import org.openhab.core.types.State;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.StringType;
+import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import org.eclipse.jetty.client.HttpClient;
-import org.openhab.binding.smartcocoon.internal.api.SmartCocoonAPI;
-//import org.openhab.binding.smartcocoon.internal.SmartCocoonException;
-import org.openhab.core.library.types.OnOffType;
 
 
 /**
@@ -57,10 +62,7 @@ public class SmartCocoonHandler extends BaseThingHandler {
     private SmartCocoonConfiguration config = new SmartCocoonConfiguration();
 
 
-    //private @Nullable SmartCocoonConfiguration config;
-    private @Nullable SmartCocoonAPI api;
     private @Nullable ScheduledFuture<?> pollingJob;
-    //private final SmartCocoonAPI api;
     private final Gson gson = new Gson();
     private final HttpClient httpClient;
 
@@ -105,8 +107,22 @@ public class SmartCocoonHandler extends BaseThingHandler {
             }
             SmartCocoonAPI api = this.getSmartCocoonAPI();
             if (api == null) {
-               throw new SmartCocoonException("Internal Error: api is null");
+		logger.error("api is null");
+		return;
             }
+
+	    //TODO - cache? 
+	    FanInfoResultDTO dto = this.getFanInfoResultDTO();
+	    if (dto == null){
+		logger.error("dto is null");
+		return;
+	    }
+
+	    String fanId = dto.id;
+	    if (fanId == null){
+		logger.error("id is null");
+		return;
+	    }
 
             try{
                 if (CHANNEL_FAN_SWITCH.equals(channelUID.getId())){
@@ -181,7 +197,7 @@ public class SmartCocoonHandler extends BaseThingHandler {
     private State getValue(String channelId, FanInfoResultDTO dto) {
         switch (channelId) {
             case CHANNEL_FAN_SWITCH:
-                return new OnOffType.from(dto.fan_on);
+                return OnOffType.from(dto.fan_on);
             case CHANNEL_FAN_SPEED:
                 return new StringType(Integer.toString(dto.speed_level*8 + dto.speed_level/3));
         }

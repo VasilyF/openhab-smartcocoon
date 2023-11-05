@@ -14,19 +14,13 @@ package org.openhab.binding.smartcocoon.internal.api;
 
 //import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
+import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-//import org.openhab.core.thing.ChannelUID;
-//import org.openhab.core.thing.Thing;
-//import org.openhab.core.thing.ThingStatus;
-//import org.openhab.core.thing.binding.BaseThingHandler;
-//import org.openhab.core.types.Command;
-//import org.openhab.core.types.RefreshType;
-import org.openhab.binding.electroluxair.internal.dto.FanInfoResultDTO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +39,8 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import org.openhab.binding.smartcocoon.internal.SmartCocoonException;
-import org.openhab.binding.smartcocoon.internal.SmartCocoonConfiguration;
+import org.openhab.binding.smartcocoon.internal.SmartCocoonBridgeConfiguration;
+import org.openhab.binding.smartcocoon.internal.dto.FanInfoResultDTO;
 
 
 /**
@@ -74,7 +69,7 @@ public class SmartCocoonAPI {
     private @Nullable String client = null;
     private int tokenExpiry = 0;
 
-    public SmartCocoonAPI(SmartCocoonConfiguration configuration, HttpClient httpClient, Gson gson) {
+    public SmartCocoonAPI(SmartCocoonBridgeConfiguration configuration, HttpClient httpClient, Gson gson) {
         this.gson = gson;
 	this.username = configuration.username;
 	this.password = configuration.password;
@@ -83,7 +78,7 @@ public class SmartCocoonAPI {
 
     public boolean refresh(Map<String, FanInfoResultDTO> smartCocoonThings) {
         try {
-            if (Instant.now().isAfter(this.tokenExpiry)) {
+            if (Instant.now().isAfter(Instant.ofEpochSecond(this.tokenExpiry))) {
                 // Login again since token is expired
                 this.login();
             }
@@ -93,7 +88,9 @@ public class SmartCocoonAPI {
             if (dtos != null) {
                 for (FanInfoResultDTO dto : dtos) {
                     String deviceId = dto.fan_id;
-		    smartCocoonThings.put(deviceId, dto);
+		    if (deviceId != null){
+			smartCocoonThings.put(deviceId, dto);
+		    }
                 }
                 return true;
             }
