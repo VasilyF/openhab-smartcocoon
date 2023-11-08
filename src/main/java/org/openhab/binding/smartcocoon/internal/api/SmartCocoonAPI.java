@@ -42,6 +42,10 @@ import org.openhab.binding.smartcocoon.internal.SmartCocoonException;
 import org.openhab.binding.smartcocoon.internal.SmartCocoonBridgeConfiguration;
 import org.openhab.binding.smartcocoon.internal.dto.FanInfoResultDTO;
 
+class FansResult {
+  int total;
+  FanInfoResultDTO[] fans;
+}
 
 /**
  * The {@link SmartCocoonAPI} handles the REST API calls
@@ -84,7 +88,9 @@ public class SmartCocoonAPI {
             }
             // Get all appliances
             String json = this.getFans();
-            FanInfoResultDTO[] dtos = gson.fromJson(json, FanInfoResultDTO[].class);
+            FansResult r;
+            r = gson.fromJson(json, FansResult.class);
+            FanInfoResultDTO[] dtos = r.fans;
             if (dtos != null) {
                 for (FanInfoResultDTO dto : dtos) {
                     String deviceId = dto.fan_id;
