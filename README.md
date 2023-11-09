@@ -56,9 +56,6 @@ On status refrest the `power` channel will reflect the state of the fan and will
 
 ## Full Example
 
-_Provide a full usage example based on textual configuration files._
-_*.things, *.items examples are mandatory as textual configuration is well used by many users._
-_*.sitemap examples are optional._
 
 ### Thing Configuration
 
@@ -72,7 +69,7 @@ Bridge smartcocoon:account:my "My SmartCocoon Account" [ username="xxxx@xxxx.xxx
 
 ```java
 Switch Vent_Fan "Vent Fan [%s]" {channel="smartcocoon:fan:my:VentFan:power"}
-Number Vent_Speed "Vent Speed [%s]" {channel="smartcocoon:fan:my:VentFan:power"}
+Number Vent_Speed "Vent Speed [%s]" {channel="smartcocoon:fan:my:VentFan:fanSpeed"}
 ```
 
 ### Sitemap Configuration
