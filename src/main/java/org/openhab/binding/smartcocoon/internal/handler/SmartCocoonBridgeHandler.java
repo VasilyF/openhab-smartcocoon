@@ -117,7 +117,7 @@ public class SmartCocoonBridgeHandler extends BaseBridgeHandler {
     private boolean refreshAndUpdateStatus() {
         if (api != null) {
             if (api.refresh(this.smartCocoonThings)) {
-                this.getBridge().getThings().stream().forEach(thing -> {
+                this.getThing().getThings().stream().forEach(thing -> {
                     SmartCocoonHandler handler = (SmartCocoonHandler) thing.getHandler();
                     if (handler != null) {
                         handler.update();

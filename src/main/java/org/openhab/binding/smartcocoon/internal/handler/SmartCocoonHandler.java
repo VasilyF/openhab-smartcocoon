@@ -14,6 +14,9 @@ package org.openhab.binding.smartcocoon.internal.handler;
 
 import static org.openhab.binding.smartcocoon.internal.SmartCocoonBindingConstants.*;
 
+import java.lang.String;
+import java.util.Map;
+import java.util.Set;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ScheduledFuture;
@@ -33,6 +36,7 @@ import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.ThingStatusDetail.OfflineStatus;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.thing.binding.BridgeHandler;
@@ -113,7 +117,7 @@ public class SmartCocoonHandler extends BaseThingHandler {
 
 	    //TODO - cache? 
 	    FanInfoResultDTO dto = this.getFanInfoResultDTO();
-	    if (dto == null){
+		    if (dto == null){
 		logger.error("dto is null");
 		return;
 	    }
@@ -154,7 +158,20 @@ public class SmartCocoonHandler extends BaseThingHandler {
         if (dto != null) {
             this.update(dto);
         } else {
-            logger.warn("FanInfoResultDTO is null!");
+            Map<String, FanInfoResultDTO> t = this.getSmartCocoonThings();
+            if (t != null) {
+               if (t.size() > 0) {
+                 this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Invalid device ID " + this.config.deviceId + 
+                                  ". Valid device IDs: " + String.join(", ", t.keySet()) + ".");
+               } else {
+                 this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Invalid device ID " + this.config.deviceId + 
+                                  ". No devices returned by API.");
+               }
+            }
+            else {
+              logger.warn("list of fans is null");
+              this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NOT_YET_READY, "Did not get the list of fans from API");
+            }
         }
     }
 
@@ -170,13 +187,21 @@ public class SmartCocoonHandler extends BaseThingHandler {
     }
 
 
-    private @Nullable FanInfoResultDTO getFanInfoResultDTO() {
+    private @Nullable Map<String, FanInfoResultDTO> getSmartCocoonThings() {
         Bridge bridge = this.getBridge();
         if (bridge != null) {
             SmartCocoonBridgeHandler bridgeHandler = (SmartCocoonBridgeHandler) bridge.getHandler();
             if (bridgeHandler != null) {
-                return bridgeHandler.getSmartCocoonThings().get(this.config.deviceId);
+               return bridgeHandler.getSmartCocoonThings();
             }
+        }
+        return null;
+    }
+
+    private @Nullable FanInfoResultDTO getFanInfoResultDTO() {
+        var t = this.getSmartCocoonThings();
+        if (t != null) {
+           return t.get(this.config.deviceId);
         }
         return null;
     }
